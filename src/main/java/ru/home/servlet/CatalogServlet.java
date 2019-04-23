@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet(name = "catalogServlet", urlPatterns = "/catalog/*")
-@MultipartConfig(location = "D:/idea.projects/itpark/HomeWorkItPark2/upload")
+@MultipartConfig
 public class CatalogServlet extends HttpServlet {
     private AutoService autoService;
     private FileService fileService;
