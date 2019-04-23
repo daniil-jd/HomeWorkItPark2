@@ -17,7 +17,7 @@
         <%--если есть авто, то показываем--%>
         <% if (request.getAttribute("item") != null) { %>
         <% Auto item = (Auto) request.getAttribute("item"); %>
-        <div class="col-6">
+        <div class="col-sm-4" style="width: auto">
             <%--показываем авто и его свойства--%>
             <div class="card">
                 <img src="<%= request.getContextPath() %>/images/<%= item.getImage() %>" class="card-img-top" >

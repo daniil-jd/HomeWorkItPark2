@@ -29,6 +29,15 @@ public class AutoService {
     public AutoService() throws NamingException {
         var context = new InitialContext();
         ds = (DataSource) context.lookup("java:/comp/env/jdbc/db");
+        try (var connection = ds.getConnection()) {
+            try (var stmt = connection.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS autos (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, image TEXT);");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public String saveImageAndGetUid(Part file) throws IOException {
@@ -58,19 +67,16 @@ public class AutoService {
      * Создать авто.
      * @param name имя
      * @param description описание
-     * @param file фото
-     * @throws IOException в случае ошибки при записи в бд
+     * @param image фото
      */
-    public void create(String name, String description, Part file) throws IOException {
-        var fileName = saveImageAndGetUid(file); // Check before jump vs Try then sorry
-
+    public void create(String name, String description, String image) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(INSERT)) {
 
                 stmt.setString(1, UUID.randomUUID().toString());
                 stmt.setString(2, name);
                 stmt.setString(3, description);
-                stmt.setString(4, fileName);
+                stmt.setString(4, image);
                 stmt.execute();
             }
         } catch (SQLException e) {
