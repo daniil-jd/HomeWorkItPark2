@@ -35,7 +35,7 @@
             <div class="row">
                 <% if (request.getAttribute("items") != null) { %>
                 <% for (Auto item : (List<Auto>)request.getAttribute("items")) { %>
-                <div class="col-sm-6 mt-3">
+                <div class="col-sm-4 mt-3" style="width: auto">
                     <div class="card">
                         <img src="<%= request.getContextPath() %>/images/<%= item.getImage() %>" class="card-img-top">
                         <div class="card-body">

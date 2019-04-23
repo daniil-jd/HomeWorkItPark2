@@ -6,13 +6,20 @@
             auth="Container"
             type="javax.sql.DataSource"
             driverClassName="org.sqlite.JDBC"
-            url="jdbc:sqlite://D:/idea.projects/itpark/HomeWorkItPark2/db.sqlite"
+            url="jdbc:sqlite::memory:"
             closeMethod="close"
     />
 
     <Resource
             name="bean/auto-service"
             type="ru.home.service.AutoService"
-            factory="org.apache.naming.factory.BeanFactory" />
+            factory="org.apache.naming.factory.BeanFactory"
+    />
+
+    <Resource
+            name="bean/file-service"
+            type="ru.home.service.FileService"
+            factory="org.apache.naming.factory.BeanFactory"
+    />
 
 </Context>

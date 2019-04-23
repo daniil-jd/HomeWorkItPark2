@@ -2,6 +2,7 @@ package ru.home.servlet;
 
 import ru.home.domain.Auto;
 import ru.home.service.AutoService;
+import ru.home.service.FileService;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -18,13 +19,15 @@ import java.util.List;
 @WebServlet(name = "catalogServlet", urlPatterns = "/catalog/*")
 @MultipartConfig(location = "D:/idea.projects/itpark/HomeWorkItPark2/upload")
 public class CatalogServlet extends HttpServlet {
-    private AutoService service;
+    private AutoService autoService;
+    private FileService fileService;
 
     @Override
     public void init() throws ServletException {
         try {
             var context = new InitialContext();
-            service = (AutoService) context.lookup("java:/comp/env/bean/auto-service");
+            autoService = (AutoService) context.lookup("java:/comp/env/bean/auto-service");
+            fileService = (FileService) context.lookup("java:/comp/env/bean/file-service");
 
         } catch (NamingException e) {
             e.printStackTrace();
@@ -34,7 +37,7 @@ public class CatalogServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         //показать все
-        var list  = service.getAll();
+        var list  = autoService.getAll();
         request.setAttribute("items", list);
         //перед WEB-INF надо слэш
         request.getRequestDispatcher("/WEB-INF/catalog.jsp").forward(request, response);
@@ -49,23 +52,24 @@ public class CatalogServlet extends HttpServlet {
 
             List<Auto> searchResult = new ArrayList<>();
             if (selectBy.equals(AutoService.NAME)) {
-                searchResult = service.findByName(query);
+                searchResult = autoService.findByName(query);
             } else if (selectBy.equals(AutoService.DESCRIPTION)) {
-                searchResult = service.findByDescription(query);
+                searchResult = autoService.findByDescription(query);
             }
             request.setAttribute("items", searchResult);
             request.getRequestDispatcher("/WEB-INF/catalog.jsp").forward(request, response);
             //создание
-        } else if (request.getPart("file") != null && request.getParameter("name") != null) {
+        } else if (request.getPart("file") != null
+                && request.getParameter("name") != null
+                && request.getPart("description") != null) {
             var file = request.getPart("file");
             var name = request.getParameter("name");
             var description = request.getParameter("description");
 
-            service.create(name, description, file);
+            var image = fileService.writeFile(file);
+            autoService.create(name, description, image);
 
-            var list = service.getAll();
-            request.setAttribute("items", list);
-            request.getRequestDispatcher("/WEB-INF/catalog.jsp").forward(request, response);
+            response.sendRedirect(String.join("/", request.getServletPath()));
         }
 
     }
