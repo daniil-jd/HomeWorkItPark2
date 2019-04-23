@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @WebServlet(name = "detailsServlet", urlPatterns = "/details/*")
-@MultipartConfig(location = "D:/idea.projects/itpark/HomeWorkItPark2/upload")
+@MultipartConfig
 public class DetailsServlet extends HttpServlet {
     private AutoService autoService;
     private FileService fileService;
