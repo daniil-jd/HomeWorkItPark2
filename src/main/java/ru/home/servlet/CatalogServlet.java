@@ -70,6 +70,15 @@ public class CatalogServlet extends HttpServlet {
             autoService.create(name, description, image);
 
             response.sendRedirect(String.join("/", request.getServletPath()));
+        } else if (request.getPart("csvFile") != null) {
+            var file = request.getPart("csvFile");
+            Auto auto = fileService.loadCsvFile(file).get();
+            if (autoService.getById(auto.getId()) == null) {
+                autoService.create(auto.getName(), auto.getDescription(), auto.getImage());
+            } else {
+                autoService.update(auto.getName(), auto.getDescription(), auto.getImage(), auto.getId());
+            }
+            response.sendRedirect(String.join("/", request.getServletPath()));
         }
 
     }

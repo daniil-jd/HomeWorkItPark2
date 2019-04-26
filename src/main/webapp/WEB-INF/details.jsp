@@ -56,6 +56,10 @@
             <form action="<%= request.getContextPath() %>/details/<%= item.getId() %>" method="post" enctype="multipart/form-data">
                 <button class="btn btn-danger" type="submit" id="delete" name="delete">Удалить</button>
             </form>
+
+            <form action="<%= request.getContextPath() %>/details/<%= item.getId() %>" method="post" enctype="multipart/form-data">
+                <button type="submit" id="load" name="load">Load</button>
+            </form>
         </div>
         <% } %>
     </div>

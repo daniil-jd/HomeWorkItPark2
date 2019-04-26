@@ -54,15 +54,25 @@
                 <h2>Добавить автомобиль</h2>
                 <div class="form-group">
                     <label for="name">Название</label>
-                    <input type="text" class="form-control" id="name" name="name" placeholder="Auto name" required>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Название" required>
                 </div>
                 <div class="form-group">
                     <label for="description">Описание</label>
-                    <textarea name="description" class="form-control" id="description" placeholder="Auto description" required></textarea>
+                    <textarea name="description" class="form-control" id="description" placeholder="Описание" required></textarea>
                 </div>
                 <div class="custom-file">
                     <input type="file" class="custom-file-input" id="file" name="file" accept="image/*" required>
                     <label class="custom-file-label" for="file">Выбрать файл</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-2">Создать</button>
+            </form>
+
+            <form class="mt-3" action="<%= request.getContextPath() %>/catalog" method="post" enctype="multipart/form-data">
+                <h2>Добавить автомобиль из csv-файла</h2>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="csvFile" name="csvFile" accept="application/vnd.ms-excel" required>
+                    <label class="custom-file-label" for="csvFile">Выбрать csv-файл</label>
                 </div>
 
                 <button type="submit" class="btn btn-primary mt-2">Создать</button>
