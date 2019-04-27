@@ -40,12 +40,6 @@ public class AutoService {
         }
     }
 
-    public String saveImageAndGetUid(Part file) throws IOException {
-        var fileName = UUID.randomUUID().toString();
-        file.write(fileName);
-        return fileName;
-    }
-
     /**
      * Получить все автомобили.
      * @return лист авто
@@ -85,6 +79,13 @@ public class AutoService {
         }
     }
 
+    /**
+     * Обновить авто.
+     * @param name имя
+     * @param description описание
+     * @param fileName фото
+     * @param id id
+     */
     public void update(String name, String description, String fileName, String id) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(UPDATE)) {
@@ -100,6 +101,10 @@ public class AutoService {
         }
     }
 
+    /**
+     * Удалить авто.
+     * @param id id
+     */
     public void delete(String id) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(DELETE)) {
@@ -124,7 +129,7 @@ public class AutoService {
                 stmt.setString(1, id);
                 try (var rs = stmt.executeQuery()) {
                     if (!rs.next()) {
-                        throw new RuntimeException("404");
+                        return null;
                     }
 
                     var name = rs.getString("name");
@@ -135,8 +140,8 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
         }
+        return null;
     }
 
     /**

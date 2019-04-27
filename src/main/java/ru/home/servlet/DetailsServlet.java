@@ -58,6 +58,12 @@ public class DetailsServlet extends HttpServlet {
             response.sendRedirect("/");
             return;
         }
+        //load
+        if ((request.getParameter("load")) != null) {
+            fileService.saveCsvFile(autoService.getById(request.getPathInfo()
+                    .split("/")[1]), response);
+            return;
+        }
 
         //изменение
         String autoName = request.getParameter("autoName");
