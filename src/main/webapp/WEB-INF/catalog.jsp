@@ -71,7 +71,7 @@
             <form class="mt-3" action="<%= request.getContextPath() %>/catalog" method="post" enctype="multipart/form-data">
                 <h2>Добавить автомобиль из csv-файла</h2>
                 <div class="custom-file">
-                    <input type="file" class="custom-file-input" id="csvFile" name="csvFile" accept="application/vnd.ms-excel" required>
+                    <input type="file" class="custom-file-input" id="csvFile" name="csvFile" accept="text/csv" required>
                     <label class="custom-file-label" for="csvFile">Выбрать csv-файл</label>
                 </div>
 

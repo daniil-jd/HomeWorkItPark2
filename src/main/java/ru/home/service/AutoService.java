@@ -129,7 +129,7 @@ public class AutoService {
                 stmt.setString(1, id);
                 try (var rs = stmt.executeQuery()) {
                     if (!rs.next()) {
-                        throw new SQLException("404");
+                        return null;
                     }
 
                     var name = rs.getString("name");
