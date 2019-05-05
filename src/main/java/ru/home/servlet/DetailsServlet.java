@@ -80,7 +80,7 @@ public class DetailsServlet extends HttpServlet {
         if (autoFile == null) {
             fileName = fileService.writeFile(autoFile);
         }
-        autoService.update(autoName, autoDescription, fileName, item.getId());
+//        autoService.update(autoName, autoDescription, fileName, item.getId());
 
         response.sendRedirect((request.getServletPath() + request.getPathInfo()));
     }

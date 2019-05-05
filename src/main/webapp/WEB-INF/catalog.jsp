@@ -41,6 +41,9 @@
                         <div class="card-body">
                             <small>Название:</small> <h5 class="card-title"><%= item.getName() %></h5>
                             <small>Описание:</small> <p class="card-text"><%= item.getDescription()%></p>
+                            <small>Год выпуска:</small> <p class="card-text"><%= item.getYear()%></p>
+                            <small>Мощность:</small> <p class="card-text"><%= item.getPower()%></p>
+                            <small>Цвет:</small> <p class="card-text"><%= item.getColor()%></p>
                             <a href="<%= request.getContextPath() %>/details/<%= item.getId() %>" class="btn btn-primary">Детали</a>
                         </div>
                     </div>
@@ -58,7 +61,19 @@
                 </div>
                 <div class="form-group">
                     <label for="description">Описание</label>
-                    <textarea name="description" class="form-control" id="description" placeholder="Описание" required></textarea>
+                    <input type="text" name="description" class="form-control" id="description" placeholder="Описание" required>
+                </div>
+                <div class="form-group">
+                    <label for="year">Год выпуска</label>
+                    <input type="text" name="year" class="form-control" id="year" placeholder="Год выпуска" required>
+                </div>
+                <div class="form-group">
+                    <label for="year">Мощность</label>
+                    <input type="number"step="0.1" min="0" name="power" class="form-control" id="power" placeholder="Мощность" required>
+                </div>
+                <div class="form-group">
+                    <label for="year">Цвет</label>
+                    <input type="text" name="color" class="form-control" id="color" placeholder="Цвет" required>
                 </div>
                 <div class="custom-file">
                     <input type="file" class="custom-file-input" id="file" name="file" accept="image/*" required>

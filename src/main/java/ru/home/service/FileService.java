@@ -96,7 +96,9 @@ public class FileService {
         if (data.length != 4) {
             throw new Exception("CSV-file does't match pattern");
         }
-        return new Auto(data[0], data[1], data[2], data[3]);
+//        return new Auto(data[0], data[1], data[2], data[3]);
+
+        return null;
     }
 
 

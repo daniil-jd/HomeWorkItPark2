@@ -65,18 +65,21 @@ public class CatalogServlet extends HttpServlet {
             var file = request.getPart("file");
             var name = request.getParameter("name");
             var description = request.getParameter("description");
+            var year = request.getParameter("year");
+            var power = Double.parseDouble(request.getParameter("power"));
+            var color = request.getParameter("color");
 
             var image = fileService.writeFile(file);
-            autoService.create(name, description, image);
+            autoService.create(new Auto(name, description, year, power, color, image));
 
             response.sendRedirect(String.join("/", request.getServletPath()));
         } else if (request.getPart("csvFile") != null) {
             var file = request.getPart("csvFile");
             Auto auto = fileService.loadCsvFile(file, request).get();
             if (autoService.getById(auto.getId()) == null) {
-                autoService.create(auto.getName(), auto.getDescription(), auto.getImage());
+                autoService.create(auto);
             } else {
-                autoService.update(auto.getName(), auto.getDescription(), auto.getImage(), auto.getId());
+                autoService.update(auto);
             }
             response.sendRedirect(String.join("/", request.getServletPath()));
         }
