@@ -17,13 +17,16 @@
         <div class="col">
             <h1>Каталог</h1>
 
-            <form class="mt-3" action="<%= request.getContextPath() %>/catalog" method="post" name="searchForm">
+            <form class="mt-3" action="<%= request.getContextPath() %>/catalog" method="get" name="searchForm">
 
                 <div class="btn-group" role="group">
                     <%-- выпадающий список --%>
                     <select class="custom-select" name="inputSelect">
-                        <option selected value="search-name">Название</option>
-                        <option value="search-description">Описание</option>
+                        <option selected value="name">Название</option>
+                        <option value="description">Описание</option>
+                        <option value="year">Год выпуска</option>
+                        <option value="power">Мощность</option>
+                        <option value="color">Цвет</option>
                     </select>
 
                     <%-- строка поиска --%>
@@ -37,7 +40,7 @@
                 <% for (Auto item : (List<Auto>)request.getAttribute("items")) { %>
                 <div class="col-sm-4 mt-3" style="width: auto">
                     <div class="card">
-                        <img src="<%= request.getContextPath() %>/images/<%= item.getImage() %>" class="card-img-top">
+                        <img src="<%= request.getContextPath() %>/images/<%= item.getImage() %>" class="card-img-top img-thumbnail">
                         <div class="card-body">
                             <small>Название:</small> <h5 class="card-title"><%= item.getName() %></h5>
                             <small>Описание:</small> <p class="card-text"><%= item.getDescription()%></p>
@@ -65,22 +68,24 @@
                 </div>
                 <div class="form-group">
                     <label for="year">Год выпуска</label>
-                    <input type="text" name="year" class="form-control" id="year" placeholder="Год выпуска" required>
+                    <input type="number" step="1" min="2018" name="year" class="form-control" id="year" placeholder="Год выпуска" required>
                 </div>
                 <div class="form-group">
                     <label for="year">Мощность</label>
-                    <input type="number"step="0.1" min="0" name="power" class="form-control" id="power" placeholder="Мощность" required>
+                    <input type="number" step="0.1" min="0.5" name="power" class="form-control" id="power" placeholder="Мощность" required>
                 </div>
                 <div class="form-group">
                     <label for="year">Цвет</label>
                     <input type="text" name="color" class="form-control" id="color" placeholder="Цвет" required>
                 </div>
-                <div class="custom-file">
-                    <input type="file" class="custom-file-input" id="file" name="file" accept="image/*" required>
-                    <label class="custom-file-label" for="file">Выбрать файл</label>
+                <div class="form-group">
+                    <div class="btn btn-light mt-2">
+                        <input type="file" id="file" name="file" accept="image/*" required>
+                    </div>
                 </div>
-
-                <button type="submit" class="btn btn-primary mt-2">Создать</button>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary mt-2">Создать</button>
+                </div>
             </form>
 
             <form class="mt-3" action="<%= request.getContextPath() %>/catalog" method="post" enctype="multipart/form-data">

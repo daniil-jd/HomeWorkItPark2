@@ -7,8 +7,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.io.*;
-import java.net.MalformedURLException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
@@ -16,14 +17,9 @@ import java.util.UUID;
 
 public class FileService {
     private String uploadPath;
-    private String temp = "D:\\idea.projects\\itpark\\HomeWorkItPark2\\upload";
 
     public FileService() throws IOException {
         uploadPath = System.getenv("UPLOAD_PATH");
-        if (StringUtils.isEmpty(uploadPath)) {
-            uploadPath = temp;
-        }
-
         Files.createDirectories(Paths.get(uploadPath));
     }
 
@@ -66,11 +62,9 @@ public class FileService {
     }
 
     public Optional<Auto> loadCsvFile(Part file, HttpServletRequest request) throws IOException {
-        Optional<Auto> auto = null;
+        Optional<Auto> auto = Optional.empty();
         try {
             auto = Optional.of(parseAutoFromString(new String(file.getInputStream().readAllBytes())));
-        } catch (IOException e) {
-            e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
         }

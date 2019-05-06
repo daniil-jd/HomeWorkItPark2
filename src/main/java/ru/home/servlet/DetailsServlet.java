@@ -40,7 +40,7 @@ public class DetailsServlet extends HttpServlet {
             String[] split = request.getPathInfo().split("/");
             if (split.length == 2) {
                 var id = split[1];
-                var auto = autoService.getById(id);
+                var auto = autoService.getById(id).get();
                 request.setAttribute("item", auto);
                 // косяк был здесь - перед WEB-INF надо слэш
                 request.getRequestDispatcher("/WEB-INF/details.jsp").forward(request, response);
@@ -57,31 +57,49 @@ public class DetailsServlet extends HttpServlet {
 
             response.sendRedirect("/");
             return;
-        }
-        //load
-        if ((request.getParameter("load")) != null) {
+            //load
+        } else if ((request.getParameter("load")) != null) {
             fileService.saveCsvFile(autoService.getById(request.getPathInfo()
-                    .split("/")[1]), response);
+                    .split("/")[1]).get(), response);
             return;
+        } else {
+            //изменение
+            updateAuto(request);
+            response.sendRedirect((request.getServletPath() + request.getPathInfo()));
         }
+    }
 
-        //изменение
+    private void updateAuto(HttpServletRequest request) throws IOException, ServletException {
         String autoName = request.getParameter("autoName");
         String autoDescription = request.getParameter("autoDescription");
-        Auto item = autoService.getById(request.getPathInfo().split("/")[1]);
-        String fileName = item.getImage();
-        var autoFile = request.getPart("autoFile");
-        if (!StringUtils.isNoneBlank(autoName)) {
-            autoName = item.getName();
+        String autoYear = request.getParameter("autoYear");
+
+        double autoPower = 0;
+        if (StringUtils.isNotEmpty(request.getParameter("autoPower"))) {
+            autoPower = Double.parseDouble(request.getParameter("autoPower"));
         }
-        if (!StringUtils.isNoneBlank(autoDescription)) {
-            autoDescription = item.getDescription();
+
+        String autoColor = request.getParameter("autoColor");
+        Auto item = autoService.getById(request.getPathInfo().split("/")[1]).get();
+        var autoFile = request.getPart("autoFile");
+        if (StringUtils.isNoneBlank(autoName)) {
+            item.setName(autoName);
+        }
+        if (StringUtils.isNoneBlank(autoDescription)) {
+            item.setDescription(autoDescription);
+        }
+        if (StringUtils.isNoneBlank(autoYear)) {
+            item.setYear(autoYear);
+        }
+        if (autoPower > 0) {
+            item.setPower(autoPower);
+        }
+        if (StringUtils.isNoneBlank(autoColor)) {
+            item.setColor(autoColor);
         }
         if (autoFile == null) {
-            fileName = fileService.writeFile(autoFile);
+            item.setImage(fileService.writeFile(autoFile));
         }
-//        autoService.update(autoName, autoDescription, fileName, item.getId());
-
-        response.sendRedirect((request.getServletPath() + request.getPathInfo()));
+        autoService.update(item);
     }
 }

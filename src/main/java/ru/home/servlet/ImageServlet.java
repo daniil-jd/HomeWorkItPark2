@@ -34,10 +34,6 @@ public class ImageServlet extends HttpServlet {
                 throw new RuntimeException("are you kidding me?");
             }
             fileService.readFile(split[1], response.getOutputStream());
-
-//      resp.setHeader("Content-Type", "application/octet-stream");
-//      resp.setHeader("Content-Disposition", "Attachment; filename=exported.csv");
-//      Files.copy(path, resp.getOutputStream());
         }
     }
 }

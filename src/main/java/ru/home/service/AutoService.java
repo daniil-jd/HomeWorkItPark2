@@ -12,21 +12,25 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class AutoService {
     private final DataSource ds;
     private final String SELECT_ALL = "SELECT id, name, description, year, power, color, image FROM autos";
-    private final String SELECT_BY_NAME = "SELECT id, name, description, year, power, color, image FROM autos WHERE name = ?";
-    private final String SELECT_BY_DESCRIPTION = "SELECT id, name, description, year, power, color, image FROM autos WHERE description = ?";
+    private final String SELECT_BY_FILED = "SELECT id, name, description, year, power, color, image FROM autos WHERE lower(%s) LIKE ?";
     private final String SELECT_BY_ID = "SELECT id, name, description, year, power, color, image FROM autos WHERE id = ?";
     private final String INSERT = "INSERT INTO autos (id, name, description, year, power, color, image) VALUES (?, ?, ?, ?, ?, ?, ?);";
     private final String UPDATE = "UPDATE autos SET name=?, description=?, year=?, power=?, color=?, image=? WHERE id=?";
     private final String DELETE = "DELETE FROM autos WHERE id=?";
     private final String CREATE_TABLE_IF_NOT_EXIST = "CREATE TABLE IF NOT EXISTS autos (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, year INTEGER , power DOUBLE, color TEXT, image TEXT);";
 
-    public static final String NAME = "search-name";
-    public static final String DESCRIPTION = "search-description";
+    private static final String NAME = "name";
+    private static final String DESCRIPTION = "description";
+    private static final String YEAR = "year";
+    private static final String POWER = "power";
+    private static final String COLOR = "color";
+    private static final String IMAGE = "image";
 
     public AutoService() throws NamingException {
         var context = new InitialContext();
@@ -34,8 +38,6 @@ public class AutoService {
         try (var connection = ds.getConnection()) {
             try (var stmt = connection.createStatement()) {
                 stmt.execute(CREATE_TABLE_IF_NOT_EXIST);
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -104,43 +106,36 @@ public class AutoService {
         }
     }
 
-    public Auto getById(String id) {
+    public Optional<Auto> getById(String id) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(SELECT_BY_ID)) {
 
                 stmt.setString(1, id);
                 try (var rs = stmt.executeQuery()) {
                     if (!rs.next()) {
-                        return null;
+                        return Optional.empty();
                     }
 
-                    var name = rs.getString("name");
-                    var description = rs.getString("description");
-                    var image = rs.getString("image");
-                    var year = rs.getString("year");
-                    var power = rs.getDouble("power");
-                    var color = rs.getString("color");
-                    return new Auto(id, name, description, year, power, color, image);
+                    var name = rs.getString(NAME);
+                    var description = rs.getString(DESCRIPTION);
+                    var image = rs.getString(IMAGE);
+                    var year = rs.getString(YEAR);
+                    var power = rs.getDouble(POWER);
+                    var color = rs.getString(COLOR);
+                    return Optional.of(new Auto(id, name, description, year, power, color, image));
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return Optional.empty();
     }
 
-    public List<Auto> findByName(String name) {
-        return findByField(name, SELECT_BY_NAME);
-    }
-
-    public List<Auto> findByDescription(String desc) {
-        return findByField(desc, SELECT_BY_DESCRIPTION);
-    }
-
-    private List<Auto> findByField(String field, String select) {
+    public List<Auto> findByField(String searchField, String searchValue) {
+        searchField = String.format(SELECT_BY_FILED, searchField);
         try (var conn = ds.getConnection()) {
-            try (var stmt = conn.prepareStatement(select)) {
-                stmt.setString(1, field);
+            try (var stmt = conn.prepareStatement(searchField)) {
+                stmt.setString(1, searchValue.toLowerCase());
                 try (var rs = stmt.executeQuery()) {
                     return buildListFormResultSet(rs);
                 }
@@ -156,12 +151,12 @@ public class AutoService {
         var list = new ArrayList<Auto>();
         while (resultSet.next()) {
             var id = resultSet.getString("id");
-            var name = resultSet.getString("name");
-            var description = resultSet.getString("description");
-            var image = resultSet.getString("image");
-            var year = resultSet.getString("year");
-            var power = resultSet.getDouble("power");
-            var color = resultSet.getString("color");
+            var name = resultSet.getString(NAME);
+            var description = resultSet.getString(DESCRIPTION);
+            var image = resultSet.getString(IMAGE);
+            var year = resultSet.getString(YEAR);
+            var power = resultSet.getDouble(POWER);
+            var color = resultSet.getString(COLOR);
             list.add(new Auto(id, name, description, year, power, color, image));
         }
         return list;
