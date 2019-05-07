@@ -1,49 +1,47 @@
 package ru.home.service;
 
 import ru.home.domain.Auto;
+import ru.home.exception.RuntimeSQLException;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.http.Part;
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class AutoService {
     private final DataSource ds;
-    private final String SELECT_ALL = "SELECT id, name, description, image FROM autos";
-    private final String SELECT_BY_NAME = "SELECT id, name, description, image FROM autos WHERE name = ?";
-    private final String SELECT_BY_DESCRIPTION = "SELECT id, name, description, image FROM autos WHERE description = ?";
-    private final String SELECT_BY_ID = "SELECT id, name, description, image FROM autos WHERE id = ?";
-    private final String INSERT = "INSERT INTO autos (id, name, description, image) VALUES (?, ?, ?, ?);";
-    private final String UPDATE = "UPDATE autos SET name=?, description=?, image=? WHERE id=?";
+    private final String SELECT_ALL = "SELECT id, name, description, year, power, color, image FROM autos";
+    private final String SELECT_BY_FILED = "SELECT id, name, description, year, power, color, image FROM autos WHERE lower(%s) LIKE ?";
+    private final String SELECT_BY_ID = "SELECT id, name, description, year, power, color, image FROM autos WHERE id = ?";
+    private final String INSERT = "INSERT INTO autos (id, name, description, year, power, color, image) VALUES (?, ?, ?, ?, ?, ?, ?);";
+    private final String UPDATE = "UPDATE autos SET name=?, description=?, year=?, power=?, color=?, image=? WHERE id=?";
     private final String DELETE = "DELETE FROM autos WHERE id=?";
+    private final String CREATE_TABLE_IF_NOT_EXIST = "CREATE TABLE IF NOT EXISTS autos (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, year INTEGER , power DOUBLE, color TEXT, image TEXT);";
 
-    public static final String NAME = "search-name";
-    public static final String DESCRIPTION = "search-description";
+    private static final String NAME = "name";
+    private static final String DESCRIPTION = "description";
+    private static final String YEAR = "year";
+    private static final String POWER = "power";
+    private static final String COLOR = "color";
+    private static final String IMAGE = "image";
 
     public AutoService() throws NamingException {
         var context = new InitialContext();
         ds = (DataSource) context.lookup("java:/comp/env/jdbc/db");
         try (var connection = ds.getConnection()) {
             try (var stmt = connection.createStatement()) {
-                stmt.execute("CREATE TABLE IF NOT EXISTS autos (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, image TEXT);");
-            } catch (SQLException e) {
-                e.printStackTrace();
+                stmt.execute(CREATE_TABLE_IF_NOT_EXIST);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    /**
-     * Получить все автомобили.
-     * @return лист авто
-     */
     public List<Auto> getAll() {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.createStatement()) {
@@ -53,58 +51,47 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e); // rethrowing
+            throw new RuntimeSQLException(e); // rethrowing
         }
     }
 
-    /**
-     * Создать авто.
-     * @param name имя
-     * @param description описание
-     * @param image фото
-     */
-    public void create(String name, String description, String image) {
+    public void create(Auto auto) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(INSERT)) {
 
                 stmt.setString(1, UUID.randomUUID().toString());
-                stmt.setString(2, name);
-                stmt.setString(3, description);
-                stmt.setString(4, image);
+                stmt.setString(2, auto.getName());
+                stmt.setString(3, auto.getDescription());
+                stmt.setString(4, auto.getYear());
+                stmt.setDouble(5, auto.getPower());
+                stmt.setString(6, auto.getColor());
+                stmt.setString(7, auto.getImage());
                 stmt.execute();
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
-    /**
-     * Обновить авто.
-     * @param name имя
-     * @param description описание
-     * @param fileName фото
-     * @param id id
-     */
-    public void update(String name, String description, String fileName, String id) {
+    public void update(Auto auto) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(UPDATE)) {
-                stmt.setString(1, name);
-                stmt.setString(2, description);
-                stmt.setString(3, fileName);
-                stmt.setString(4, id);
+                stmt.setString(1, auto.getName());
+                stmt.setString(2, auto.getDescription());
+                stmt.setString(3, auto.getYear());
+                stmt.setDouble(4, auto.getPower());
+                stmt.setString(5, auto.getColor());
+                stmt.setString(6, auto.getImage());
+                stmt.setString(7, auto.getId());
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
-    /**
-     * Удалить авто.
-     * @param id id
-     */
     public void delete(String id) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(DELETE)) {
@@ -113,90 +100,62 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
-    /**
-     * Поиск авто по айди.
-     * @param id айди
-     * @return авто
-     */
-    public Auto getById(String id) {
+    public Optional<Auto> getById(String id) {
         try (var conn = ds.getConnection()) {
             try (var stmt = conn.prepareStatement(SELECT_BY_ID)) {
 
                 stmt.setString(1, id);
                 try (var rs = stmt.executeQuery()) {
                     if (!rs.next()) {
-                        return null;
+                        return Optional.empty();
                     }
 
-                    var name = rs.getString("name");
-                    var description = rs.getString("description");
-                    var image = rs.getString("image");
-                    return new Auto(id, name, description, image);
+                    var name = rs.getString(NAME);
+                    var description = rs.getString(DESCRIPTION);
+                    var image = rs.getString(IMAGE);
+                    var year = rs.getString(YEAR);
+                    var power = rs.getDouble(POWER);
+                    var color = rs.getString(COLOR);
+                    return Optional.of(new Auto(id, name, description, year, power, color, image));
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return Optional.empty();
     }
 
-    /**
-     * Поиск авто по имени.
-     * @param name имя
-     * @return список авто
-     */
-    public List<Auto> findByName(String name) {
-        return findByField(name, SELECT_BY_NAME);
-    }
-
-    /**
-     * Поиск авто по описанию.
-     * @param desc описание
-     * @return список авто
-     */
-    public List<Auto> findByDescription(String desc) {
-        return findByField(desc, SELECT_BY_DESCRIPTION);
-    }
-
-    /**
-     * Поиск авто по заданному полю.
-     * @param field поле
-     * @param select запрос
-     * @return список авто
-     */
-    private List<Auto> findByField(String field, String select) {
+    public List<Auto> findByField(String searchField, String searchValue) {
+        searchField = String.format(SELECT_BY_FILED, searchField);
         try (var conn = ds.getConnection()) {
-            try (var stmt = conn.prepareStatement(select)) {
-                stmt.setString(1, field);
+            try (var stmt = conn.prepareStatement(searchField)) {
+                stmt.setString(1, searchValue.toLowerCase());
                 try (var rs = stmt.executeQuery()) {
                     return buildListFormResultSet(rs);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e); // rethrowing
+            throw new RuntimeSQLException(e); // rethrowing
         }
     }
 
-    /**
-     * Собрать ответ из ResultSet.
-     * @param resultSet resultSet
-     * @return список авто
-     * @throws SQLException в случае ошибки в бд
-     */
     private List<Auto> buildListFormResultSet(ResultSet resultSet)
             throws SQLException {
         var list = new ArrayList<Auto>();
         while (resultSet.next()) {
             var id = resultSet.getString("id");
-            var name = resultSet.getString("name");
-            var description = resultSet.getString("description");
-            var image = resultSet.getString("image");
-            list.add(new Auto(id, name, description, image));
+            var name = resultSet.getString(NAME);
+            var description = resultSet.getString(DESCRIPTION);
+            var image = resultSet.getString(IMAGE);
+            var year = resultSet.getString(YEAR);
+            var power = resultSet.getDouble(POWER);
+            var color = resultSet.getString(COLOR);
+            list.add(new Auto(id, name, description, year, power, color, image));
         }
         return list;
     }

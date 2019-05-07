@@ -3,6 +3,7 @@ package ru.home.servlet;
 import org.apache.commons.lang3.StringUtils;
 import ru.home.domain.Auto;
 import ru.home.service.AutoService;
+import ru.home.service.CsvService;
 import ru.home.service.FileService;
 
 import javax.naming.InitialContext;
@@ -14,12 +15,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
 
 @WebServlet(name = "detailsServlet", urlPatterns = "/details/*")
 @MultipartConfig
 public class DetailsServlet extends HttpServlet {
     private AutoService autoService;
     private FileService fileService;
+    private CsvService csvService;
 
     @Override
     public void init() throws ServletException {
@@ -27,6 +30,7 @@ public class DetailsServlet extends HttpServlet {
             var context = new InitialContext();
             autoService = (AutoService) context.lookup("java:/comp/env/bean/auto-service");
             fileService = (FileService) context.lookup("java:/comp/env/bean/file-service");
+            csvService = (CsvService) context.lookup("java:/comp/env/bean/csv-service");
 
         } catch (NamingException e) {
             e.printStackTrace();
@@ -40,7 +44,7 @@ public class DetailsServlet extends HttpServlet {
             String[] split = request.getPathInfo().split("/");
             if (split.length == 2) {
                 var id = split[1];
-                var auto = autoService.getById(id);
+                var auto = autoService.getById(id).get();
                 request.setAttribute("item", auto);
                 // косяк был здесь - перед WEB-INF надо слэш
                 request.getRequestDispatcher("/WEB-INF/details.jsp").forward(request, response);
@@ -56,32 +60,65 @@ public class DetailsServlet extends HttpServlet {
             autoService.delete(request.getPathInfo().split("/")[1]);
 
             response.sendRedirect("/");
-            return;
+            //load
+        } else if ((request.getParameter("load")) != null) {
+            saveCsvFile(autoService.getById(request.getPathInfo()
+                    .split("/")[1]).get(), response);
+        } else {
+            //изменение
+            updateAuto(request);
+            response.sendRedirect((request.getServletPath() + request.getPathInfo()));
         }
-        //load
-        if ((request.getParameter("load")) != null) {
-            fileService.saveCsvFile(autoService.getById(request.getPathInfo()
-                    .split("/")[1]), response);
-            return;
-        }
+    }
 
-        //изменение
+    private void updateAuto(HttpServletRequest request) throws IOException, ServletException {
         String autoName = request.getParameter("autoName");
         String autoDescription = request.getParameter("autoDescription");
-        Auto item = autoService.getById(request.getPathInfo().split("/")[1]);
-        String fileName = item.getImage();
-        var autoFile = request.getPart("autoFile");
-        if (!StringUtils.isNoneBlank(autoName)) {
-            autoName = item.getName();
+        String autoYear = request.getParameter("autoYear");
+
+        double autoPower = 0;
+        if (StringUtils.isNotEmpty(request.getParameter("autoPower"))) {
+            autoPower = Double.parseDouble(request.getParameter("autoPower"));
         }
-        if (!StringUtils.isNoneBlank(autoDescription)) {
-            autoDescription = item.getDescription();
+
+        String autoColor = request.getParameter("autoColor");
+        Auto item = autoService.getById(request.getPathInfo().split("/")[1]).get();
+        var autoFile = request.getPart("autoFile");
+        if (StringUtils.isNoneBlank(autoName)) {
+            item.setName(autoName);
+        }
+        if (StringUtils.isNoneBlank(autoDescription)) {
+            item.setDescription(autoDescription);
+        }
+        if (StringUtils.isNoneBlank(autoYear)) {
+            item.setYear(autoYear);
+        }
+        if (autoPower > 0) {
+            item.setPower(autoPower);
+        }
+        if (StringUtils.isNoneBlank(autoColor)) {
+            item.setColor(autoColor);
         }
         if (autoFile == null) {
-            fileName = fileService.writeFile(autoFile);
+            item.setImage(fileService.writeFile(autoFile));
         }
-        autoService.update(autoName, autoDescription, fileName, item.getId());
+        autoService.update(item);
+    }
 
-        response.sendRedirect((request.getServletPath() + request.getPathInfo()));
+    private void saveCsvFile(Auto auto, HttpServletResponse response) {
+        response.setHeader("Content-Type", "application/octet-stream");
+        response.setHeader("Content-Disposition",
+                "Attachment; filename=" + auto.getId() + ".csv");
+
+        try {
+            String result = csvService.saveCsv(auto);
+
+            OutputStream outputStream = response.getOutputStream();
+            outputStream.write(result.getBytes());
+            outputStream.flush();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
