@@ -5,11 +5,14 @@ import ru.home.service.FileService;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @WebServlet(name = "imageServlet", urlPatterns = "/images/*")
 public class ImageServlet extends HttpServlet {
@@ -33,11 +36,12 @@ public class ImageServlet extends HttpServlet {
             if (split.length != 2) {
                 throw new RuntimeException("are you kidding me?");
             }
-            fileService.readFile(split[1], response.getOutputStream());
-
-//      resp.setHeader("Content-Type", "application/octet-stream");
-//      resp.setHeader("Content-Disposition", "Attachment; filename=exported.csv");
-//      Files.copy(path, resp.getOutputStream());
+            readFile(split[1], response.getOutputStream());
         }
+    }
+
+    public void readFile(String id, ServletOutputStream os) throws IOException {
+        var path = Paths.get(System.getenv("UPLOAD_PATH")).resolve(id);
+        Files.copy(path, os);
     }
 }

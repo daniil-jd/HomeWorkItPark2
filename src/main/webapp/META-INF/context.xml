@@ -22,4 +22,10 @@
             factory="org.apache.naming.factory.BeanFactory"
     />
 
+    <Resource
+            name="bean/csv-service"
+            type="ru.home.service.CsvService"
+            factory="org.apache.naming.factory.BeanFactory"
+    />
+
 </Context>

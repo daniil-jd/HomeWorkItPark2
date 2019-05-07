@@ -20,10 +20,13 @@
         <div class="col-sm-4" style="width: auto">
             <%--показываем авто и его свойства--%>
             <div class="card">
-                <img src="<%= request.getContextPath() %>/images/<%= item.getImage() %>" class="card-img-top" >
+                <img src="<%= request.getContextPath() %>/images/<%= item.getImage() %>" class="card-img-top img-thumbnail" >
                 <div class="card-body">
                     <small>Название:</small> <h5 class="card-title"><%= item.getName() %></h5>
                     <small>Описание:</small> <p class="card-text"><%= item.getDescription()%></p>
+                    <small>Год выпуска:</small> <p class="card-text"><%= item.getYear()%></p>
+                    <small>Мощность:</small> <p class="card-text"><%= item.getPower()%></p>
+                    <small>Цвет:</small> <p class="card-text"><%= item.getColor()%></p>
                 </div>
             </div>
         </div>
@@ -45,6 +48,18 @@
                             <input type="text" class="form-control" id="autoDescription" name="autoDescription" placeholder="<%= item.getDescription()%>">
                         </div>
                         <div class="form-group">
+                            <label for="autoYear">Год выпуска</label>
+                            <input type="number" step="1" min="2018" class="form-control" id="autoYear" name="autoYear" placeholder="<%= item.getYear()%>">
+                        </div>
+                        <div class="form-group">
+                            <label for="autoPower">Мощность</label>
+                            <input type="number" step="0.1" min="0.5" class="form-control" id="autoPower" name="autoPower" placeholder="<%= item.getPower()%>">
+                        </div>
+                        <div class="form-group">
+                            <label for="autoColor">Цвет</label>
+                            <input type="text" class="form-control" id="autoColor" name="autoColor" placeholder="<%= item.getColor()%>">
+                        </div>
+                        <div class="form-group">
                             <label for="autoFile">Изображение</label>
                             <input type="file" class="form-control" id="autoFile" name="autoFile" accept="image/*">
                         </div>
@@ -58,7 +73,7 @@
             </form>
 
             <form action="<%= request.getContextPath() %>/details/<%= item.getId() %>" method="post" enctype="multipart/form-data">
-                <button type="submit" id="load" name="load">Load</button>
+                <button type="submit" id="load" name="load">Сохранить</button>
             </form>
         </div>
         <% } %>
