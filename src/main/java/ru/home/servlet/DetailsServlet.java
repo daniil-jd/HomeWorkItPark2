@@ -3,6 +3,7 @@ package ru.home.servlet;
 import org.apache.commons.lang3.StringUtils;
 import ru.home.domain.Auto;
 import ru.home.service.AutoService;
+import ru.home.service.CsvService;
 import ru.home.service.FileService;
 
 import javax.naming.InitialContext;
@@ -14,12 +15,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
 
 @WebServlet(name = "detailsServlet", urlPatterns = "/details/*")
 @MultipartConfig
 public class DetailsServlet extends HttpServlet {
     private AutoService autoService;
     private FileService fileService;
+    private CsvService csvService;
 
     @Override
     public void init() throws ServletException {
@@ -27,6 +30,7 @@ public class DetailsServlet extends HttpServlet {
             var context = new InitialContext();
             autoService = (AutoService) context.lookup("java:/comp/env/bean/auto-service");
             fileService = (FileService) context.lookup("java:/comp/env/bean/file-service");
+            csvService = (CsvService) context.lookup("java:/comp/env/bean/csv-service");
 
         } catch (NamingException e) {
             e.printStackTrace();
@@ -56,12 +60,10 @@ public class DetailsServlet extends HttpServlet {
             autoService.delete(request.getPathInfo().split("/")[1]);
 
             response.sendRedirect("/");
-            return;
             //load
         } else if ((request.getParameter("load")) != null) {
-            fileService.saveCsvFile(autoService.getById(request.getPathInfo()
+            saveCsvFile(autoService.getById(request.getPathInfo()
                     .split("/")[1]).get(), response);
-            return;
         } else {
             //изменение
             updateAuto(request);
@@ -101,5 +103,22 @@ public class DetailsServlet extends HttpServlet {
             item.setImage(fileService.writeFile(autoFile));
         }
         autoService.update(item);
+    }
+
+    private void saveCsvFile(Auto auto, HttpServletResponse response) {
+        response.setHeader("Content-Type", "application/octet-stream");
+        response.setHeader("Content-Disposition",
+                "Attachment; filename=" + auto.getId() + ".csv");
+
+        try {
+            String result = csvService.saveCsv(auto);
+
+            OutputStream outputStream = response.getOutputStream();
+            outputStream.write(result.getBytes());
+            outputStream.flush();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

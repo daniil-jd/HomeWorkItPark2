@@ -1,15 +1,13 @@
 package ru.home.service;
 
 import ru.home.domain.Auto;
+import ru.home.exception.RuntimeSQLException;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.http.Part;
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +51,7 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e); // rethrowing
+            throw new RuntimeSQLException(e); // rethrowing
         }
     }
 
@@ -72,7 +70,7 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -90,7 +88,7 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -102,7 +100,7 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeSQLException(e);
         }
     }
 
@@ -142,7 +140,7 @@ public class AutoService {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new RuntimeException(e); // rethrowing
+            throw new RuntimeSQLException(e); // rethrowing
         }
     }
 

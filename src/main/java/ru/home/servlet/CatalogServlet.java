@@ -3,6 +3,7 @@ package ru.home.servlet;
 import org.apache.commons.lang3.StringUtils;
 import ru.home.domain.Auto;
 import ru.home.service.AutoService;
+import ru.home.service.CsvService;
 import ru.home.service.FileService;
 
 import javax.naming.InitialContext;
@@ -14,6 +15,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,14 +25,18 @@ import java.util.List;
 @MultipartConfig
 public class CatalogServlet extends HttpServlet {
     private AutoService autoService;
+    private CsvService csvService;
     private FileService fileService;
+    private String uploadPath;
 
     @Override
     public void init() throws ServletException {
+        uploadPath = System.getenv("UPLOAD_PATH");
         try {
             var context = new InitialContext();
             autoService = (AutoService) context.lookup("java:/comp/env/bean/auto-service");
             fileService = (FileService) context.lookup("java:/comp/env/bean/file-service");
+            csvService = (CsvService) context.lookup("java:/comp/env/bean/csv-service");
 
         } catch (NamingException e) {
             e.printStackTrace();
@@ -91,12 +99,28 @@ public class CatalogServlet extends HttpServlet {
 
     private void loadFromFile(HttpServletRequest request) throws IOException, ServletException {
         var file = request.getPart("csvFile");
-        Auto auto = fileService.loadCsvFile(file, request).get();
-        if (autoService.getById(auto.getId()).isEmpty()) {
-            autoService.create(auto);
-        } else {
-            autoService.update(auto);
+        List<Auto> autos = csvService.readCsv(new String(file.getInputStream().readAllBytes()));
+
+        for (Auto auto : autos) {
+            if (StringUtils.isEmpty(auto.getImage()) || !isImagePresent(auto.getImage())) {
+                if (!isImagePresent("car")) {
+                    InputStream is = request.getServletContext().getResourceAsStream("/WEB-INF/static/car");
+                    Files.copy(is, Paths.get(uploadPath).resolve("car"));
+                }
+                auto.setImage("car");
+            }
+
+            if (autoService.getById(auto.getId()).isEmpty()) {
+                autoService.create(auto);
+            } else {
+                autoService.update(auto);
+            }
         }
+
+    }
+
+    private boolean isImagePresent(String id) {
+        return Paths.get(uploadPath).resolve(id).toFile().canRead();
     }
 
 }
