@@ -111,7 +111,7 @@ public class DetailsServlet extends HttpServlet {
                 "Attachment; filename=" + auto.getId() + ".csv");
 
         try {
-            String result = csvService.saveCsv(auto);
+            String result = csvService.saveOneItemCsv(auto);
 
             OutputStream outputStream = response.getOutputStream();
             outputStream.write(result.getBytes());

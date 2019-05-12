@@ -15,10 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.io.OutputStream;
 import java.util.List;
 
 @WebServlet(name = "catalogServlet", urlPatterns = "/catalog/*")
@@ -27,11 +24,9 @@ public class CatalogServlet extends HttpServlet {
     private AutoService autoService;
     private CsvService csvService;
     private FileService fileService;
-    private String uploadPath;
 
     @Override
     public void init() throws ServletException {
-        uploadPath = System.getenv("UPLOAD_PATH");
         try {
             var context = new InitialContext();
             autoService = (AutoService) context.lookup("java:/comp/env/bean/auto-service");
@@ -65,6 +60,8 @@ public class CatalogServlet extends HttpServlet {
                 && request.getPart("description") != null) {
             create(request);
             response.sendRedirect(String.join("/", request.getServletPath()));
+        } else if (request.getParameter("load") != null) {
+            saveToFile(response);
         } else if (request.getPart("csvFile") != null) {
             loadFromFile(request);
             response.sendRedirect(String.join("/", request.getServletPath()));
@@ -76,7 +73,7 @@ public class CatalogServlet extends HttpServlet {
         String query = request.getParameter("query");
         String selectBy = request.getParameter("inputSelect");
 
-        List<Auto> searchResult = new ArrayList<>();
+        List<Auto> searchResult;
         if (StringUtils.isNotEmpty(query)) {
             searchResult = autoService.findByField(selectBy, query);
         } else {
@@ -86,6 +83,7 @@ public class CatalogServlet extends HttpServlet {
     }
 
     private void create(HttpServletRequest request) throws IOException, ServletException {
+        request.setCharacterEncoding("UTF-8");
         var file = request.getPart("file");
         var name = request.getParameter("name");
         var description = request.getParameter("description");
@@ -99,28 +97,29 @@ public class CatalogServlet extends HttpServlet {
 
     private void loadFromFile(HttpServletRequest request) throws IOException, ServletException {
         var file = request.getPart("csvFile");
-        List<Auto> autos = csvService.readCsv(new String(file.getInputStream().readAllBytes()));
+        csvService.readCsv(
+                autoService,
+                request.getServletContext().getResourceAsStream("/WEB-INF/static/car"),
+                new String(file.getInputStream().readAllBytes())
+        );
+    }
 
-        for (Auto auto : autos) {
-            if (StringUtils.isEmpty(auto.getImage()) || !isImagePresent(auto.getImage())) {
-                if (!isImagePresent("car")) {
-                    InputStream is = request.getServletContext().getResourceAsStream("/WEB-INF/static/car");
-                    Files.copy(is, Paths.get(uploadPath).resolve("car"));
-                }
-                auto.setImage("car");
-            }
+    private void saveToFile(HttpServletResponse response) {
+        response.setHeader("Content-Type", "application/octet-stream");
+        response.setHeader("Content-Disposition",
+                "Attachment; filename=autos.csv");
+        try {
+            String result = csvService.saveAllItemsCsv(autoService.getAll());
 
-            if (autoService.getById(auto.getId()).isEmpty()) {
-                autoService.create(auto);
-            } else {
-                autoService.update(auto);
-            }
+            OutputStream outputStream = response.getOutputStream();
+            outputStream.write(result.getBytes());
+            outputStream.flush();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
     }
 
-    private boolean isImagePresent(String id) {
-        return Paths.get(uploadPath).resolve(id).toFile().canRead();
-    }
+
 
 }
