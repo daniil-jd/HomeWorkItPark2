@@ -15,6 +15,8 @@ import java.util.UUID;
 
 public class AutoService {
     private final DataSource ds;
+    private PreparedStatementExecutable psExecutable;
+    private AutoBuildable autoBuildable;
     private final String SELECT_ALL = "SELECT id, name, description, year, power, color, image FROM autos";
     private final String SELECT_BY_FILED = "SELECT id, name, description, year, power, color, image FROM autos WHERE lower(%s) LIKE ?";
     private final String SELECT_BY_ID = "SELECT id, name, description, year, power, color, image FROM autos WHERE id = ?";
@@ -23,6 +25,7 @@ public class AutoService {
     private final String DELETE = "DELETE FROM autos WHERE id=?";
     private final String CREATE_TABLE_IF_NOT_EXIST = "CREATE TABLE IF NOT EXISTS autos (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL, year INTEGER , power DOUBLE, color TEXT, image TEXT);";
 
+    private static final String ID = "id";
     private static final String NAME = "name";
     private static final String DESCRIPTION = "description";
     private static final String YEAR = "year";
@@ -40,6 +43,53 @@ public class AutoService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        psExecutable = ((query, ds, auto) -> {
+            try (var conn = ds.getConnection()) {
+                if (query.contains("INSERT")) {
+                    try (var stmt = conn.prepareStatement(query)) {
+
+                        stmt.setString(1, UUID.randomUUID().toString());
+                        stmt.setString(2, auto.getName());
+                        stmt.setString(3, auto.getDescription());
+                        stmt.setString(4, auto.getYear());
+                        stmt.setDouble(5, auto.getPower());
+                        stmt.setString(6, auto.getColor());
+                        stmt.setString(7, auto.getImage());
+                        stmt.execute();
+                    }
+                } else {
+                    try (var stmt = conn.prepareStatement(query)) {
+                        stmt.setString(1, auto.getName());
+                        stmt.setString(2, auto.getDescription());
+                        stmt.setString(3, auto.getYear());
+                        stmt.setDouble(4, auto.getPower());
+                        stmt.setString(5, auto.getColor());
+                        stmt.setString(6, auto.getImage());
+                        stmt.setString(7, auto.getId());
+                        stmt.executeUpdate();
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                throw new RuntimeSQLException(e);
+            }
+        });
+        autoBuildable = (rs -> {
+            try {
+                var autoId = rs.getString(ID);
+                var name = rs.getString(NAME);
+                var description = rs.getString(DESCRIPTION);
+                var image = rs.getString(IMAGE);
+                var year = rs.getString(YEAR);
+                var power = rs.getDouble(POWER);
+                var color = rs.getString(COLOR);
+
+                return new Auto(autoId, name, description, year, power, color, image);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                throw new RuntimeSQLException(e);
+            }
+        });
     }
 
     public List<Auto> getAll() {
@@ -56,40 +106,11 @@ public class AutoService {
     }
 
     public void create(Auto auto) {
-        try (var conn = ds.getConnection()) {
-            try (var stmt = conn.prepareStatement(INSERT)) {
-
-                stmt.setString(1, UUID.randomUUID().toString());
-                stmt.setString(2, auto.getName());
-                stmt.setString(3, auto.getDescription());
-                stmt.setString(4, auto.getYear());
-                stmt.setDouble(5, auto.getPower());
-                stmt.setString(6, auto.getColor());
-                stmt.setString(7, auto.getImage());
-                stmt.execute();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeSQLException(e);
-        }
+        psExecutable.executePreparedStatement(INSERT, ds, auto);
     }
 
     public void update(Auto auto) {
-        try (var conn = ds.getConnection()) {
-            try (var stmt = conn.prepareStatement(UPDATE)) {
-                stmt.setString(1, auto.getName());
-                stmt.setString(2, auto.getDescription());
-                stmt.setString(3, auto.getYear());
-                stmt.setDouble(4, auto.getPower());
-                stmt.setString(5, auto.getColor());
-                stmt.setString(6, auto.getImage());
-                stmt.setString(7, auto.getId());
-                stmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new RuntimeSQLException(e);
-        }
+        psExecutable.executePreparedStatement(UPDATE, ds, auto);
     }
 
     public void delete(String id) {
@@ -114,13 +135,7 @@ public class AutoService {
                         return Optional.empty();
                     }
 
-                    var name = rs.getString(NAME);
-                    var description = rs.getString(DESCRIPTION);
-                    var image = rs.getString(IMAGE);
-                    var year = rs.getString(YEAR);
-                    var power = rs.getDouble(POWER);
-                    var color = rs.getString(COLOR);
-                    return Optional.of(new Auto(id, name, description, year, power, color, image));
+                    return Optional.of(autoBuildable.buildAuto(rs));
                 }
             }
         } catch (SQLException e) {
@@ -144,18 +159,11 @@ public class AutoService {
         }
     }
 
-    private List<Auto> buildListFormResultSet(ResultSet resultSet)
+    private List<Auto> buildListFormResultSet(ResultSet rs)
             throws SQLException {
         var list = new ArrayList<Auto>();
-        while (resultSet.next()) {
-            var id = resultSet.getString("id");
-            var name = resultSet.getString(NAME);
-            var description = resultSet.getString(DESCRIPTION);
-            var image = resultSet.getString(IMAGE);
-            var year = resultSet.getString(YEAR);
-            var power = resultSet.getDouble(POWER);
-            var color = resultSet.getString(COLOR);
-            list.add(new Auto(id, name, description, year, power, color, image));
+        while (rs.next()) {
+            list.add(autoBuildable.buildAuto(rs));
         }
         return list;
     }
